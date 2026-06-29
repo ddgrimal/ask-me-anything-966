@@ -30,7 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 const API_URL =
-  (typeof window !== "undefined" && (window as { __RAG_API__?: string }).__RAG_API__) ||
+  (import.meta.env.VITE_RAG_API_URL as string | undefined) ??
   "http://localhost:8000/api/chat";
 
 type ChatMessage = {
