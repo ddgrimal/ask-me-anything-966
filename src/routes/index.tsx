@@ -211,6 +211,27 @@ function ChatPage() {
                   <Message key={m.id} from="assistant">
                     <MessageContent>
                       <MessageResponse>{m.text}</MessageResponse>
+                      {m.citations && m.citations.length > 0 && (
+                        <div className="mt-3 border-t border-border/40 pt-2">
+                          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Fuentes
+                          </p>
+                          <ul className="space-y-1">
+                            {m.citations.map((c, i) => (
+                              <li key={i} className="text-xs">
+                                <a
+                                  href={c.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary underline-offset-2 hover:underline"
+                                >
+                                  {c.title ?? c.url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </MessageContent>
                   </Message>
                 ),
