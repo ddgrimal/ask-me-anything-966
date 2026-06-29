@@ -18,6 +18,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import ragLogo from "@/assets/rag-logo.png";
+import { BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
