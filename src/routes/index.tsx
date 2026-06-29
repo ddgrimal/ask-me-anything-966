@@ -211,7 +211,7 @@ function ChatPage() {
                 ) : (
                   <Message key={m.id} from="assistant">
                     <div className="w-full max-w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-                      <div className="px-5 py-4 text-[15px] leading-relaxed text-card-foreground prose-sm">
+                      <div className="px-5 py-4 text-[15px] leading-relaxed text-card-foreground [&_code]:whitespace-pre-wrap [&_code]:break-all [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words">
                         <MessageResponse>{m.text}</MessageResponse>
                       </div>
 
@@ -272,7 +272,7 @@ function ChatPage() {
           <ConversationScrollButton />
         </Conversation>
 
-        <div className="sticky bottom-0 pb-4 pt-2">
+        <div className="sticky bottom-0 border-t border-border/40 bg-background/95 pb-4 pt-3 backdrop-blur">
           <PromptInput onSubmit={handleSubmit}>
             <PromptInputTextarea
               data-prompt-input
