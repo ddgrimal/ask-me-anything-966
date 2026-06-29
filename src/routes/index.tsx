@@ -70,19 +70,59 @@ function ChatPage() {
     try {
       const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ question: text }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data = (await res.json()) as { answer?: string; response?: string; error?: string };
-      const answer = data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
+      const contentType = res.headers.get("content-type") ?? "";
+      const assistantId = crypto.randomUUID();
 
-      setMessages((m) => [
-        ...m,
-        { id: crypto.randomUUID(), role: "assistant", text: answer },
-      ]);
+      if (contentType.includes("text/event-stream") || contentType.includes("stream")) {
+        setMessages((m) => [...m, { id: assistantId, role: "assistant", text: "" }]);
+
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("Sin body en la respuesta");
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let accumulated = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const payload = trimmed.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const obj = JSON.parse(payload);
+              const chunk =
+                obj.text ?? obj.delta ?? obj.content ?? obj.answer ?? obj.response ?? "";
+              if (chunk) {
+                accumulated += chunk;
+                setMessages((m) =>
+                  m.map((msg) =>
+                    msg.id === assistantId ? { ...msg, text: accumulated } : msg,
+                  ),
+                );
+              }
+            } catch {
+              // línea no-JSON, ignorar
+            }
+          }
+        }
+      } else {
+        const data = (await res.json()) as { answer?: string; response?: string; error?: string };
+        const answer = data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
+        setMessages((m) => [...m, { id: assistantId, role: "assistant", text: answer }]);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error desconocido";
       toast.error("No se pudo conectar con la API", {
