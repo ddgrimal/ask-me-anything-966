@@ -272,7 +272,7 @@ function ChatPage() {
           <ConversationScrollButton />
         </Conversation>
 
-        <div className="sticky bottom-0 pb-4 pt-2">
+        <div className="sticky bottom-0 border-t border-border/40 bg-background/95 pb-4 pt-3 backdrop-blur">
           <PromptInput onSubmit={handleSubmit}>
             <PromptInputTextarea
               data-prompt-input
