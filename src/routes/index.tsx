@@ -90,6 +90,15 @@ function ChatPage() {
         const decoder = new TextDecoder();
         let buffer = "";
         let accumulated = "";
+        let citations: Citation[] | undefined;
+
+        const flush = () => {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === assistantId ? { ...msg, text: accumulated, citations } : msg,
+            ),
+          );
+        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -108,23 +117,30 @@ function ChatPage() {
               const obj = JSON.parse(payload);
               const chunk =
                 obj.text ?? obj.delta ?? obj.content ?? obj.answer ?? obj.response ?? "";
-              if (chunk) {
-                accumulated += chunk;
-                setMessages((m) =>
-                  m.map((msg) =>
-                    msg.id === assistantId ? { ...msg, text: accumulated } : msg,
-                  ),
-                );
+              if (typeof chunk === "string" && chunk) {
+                // Si llega el texto completo en un único evento, reemplazamos
+                accumulated = accumulated && chunk.startsWith(accumulated) ? chunk : accumulated + chunk;
               }
+              if (Array.isArray(obj.citations)) citations = obj.citations as Citation[];
+              flush();
             } catch {
               // línea no-JSON, ignorar
             }
           }
         }
       } else {
-        const data = (await res.json()) as { answer?: string; response?: string; error?: string };
-        const answer = data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
-        setMessages((m) => [...m, { id: assistantId, role: "assistant", text: answer }]);
+        const data = (await res.json()) as {
+          text?: string;
+          answer?: string;
+          response?: string;
+          error?: string;
+          citations?: Citation[];
+        };
+        const answer = data.text ?? data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
+        setMessages((m) => [
+          ...m,
+          { id: assistantId, role: "assistant", text: answer, citations: data.citations },
+        ]);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error desconocido";
