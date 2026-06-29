@@ -33,10 +33,13 @@ const API_URL =
   (import.meta.env.VITE_RAG_API_URL as string | undefined) ??
   "http://localhost:8000/api/chat";
 
+type Citation = { title?: string; url: string };
+
 type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  citations?: Citation[];
 };
 
 function ChatPage() {
@@ -87,6 +90,15 @@ function ChatPage() {
         const decoder = new TextDecoder();
         let buffer = "";
         let accumulated = "";
+        let citations: Citation[] | undefined;
+
+        const flush = () => {
+          setMessages((m) =>
+            m.map((msg) =>
+              msg.id === assistantId ? { ...msg, text: accumulated, citations } : msg,
+            ),
+          );
+        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -105,23 +117,30 @@ function ChatPage() {
               const obj = JSON.parse(payload);
               const chunk =
                 obj.text ?? obj.delta ?? obj.content ?? obj.answer ?? obj.response ?? "";
-              if (chunk) {
-                accumulated += chunk;
-                setMessages((m) =>
-                  m.map((msg) =>
-                    msg.id === assistantId ? { ...msg, text: accumulated } : msg,
-                  ),
-                );
+              if (typeof chunk === "string" && chunk) {
+                // Si llega el texto completo en un único evento, reemplazamos
+                accumulated = accumulated && chunk.startsWith(accumulated) ? chunk : accumulated + chunk;
               }
+              if (Array.isArray(obj.citations)) citations = obj.citations as Citation[];
+              flush();
             } catch {
               // línea no-JSON, ignorar
             }
           }
         }
       } else {
-        const data = (await res.json()) as { answer?: string; response?: string; error?: string };
-        const answer = data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
-        setMessages((m) => [...m, { id: assistantId, role: "assistant", text: answer }]);
+        const data = (await res.json()) as {
+          text?: string;
+          answer?: string;
+          response?: string;
+          error?: string;
+          citations?: Citation[];
+        };
+        const answer = data.text ?? data.answer ?? data.response ?? data.error ?? "(respuesta vacía)";
+        setMessages((m) => [
+          ...m,
+          { id: assistantId, role: "assistant", text: answer, citations: data.citations },
+        ]);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Error desconocido";
@@ -192,6 +211,27 @@ function ChatPage() {
                   <Message key={m.id} from="assistant">
                     <MessageContent>
                       <MessageResponse>{m.text}</MessageResponse>
+                      {m.citations && m.citations.length > 0 && (
+                        <div className="mt-3 border-t border-border/40 pt-2">
+                          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            Fuentes
+                          </p>
+                          <ul className="space-y-1">
+                            {m.citations.map((c, i) => (
+                              <li key={i} className="text-xs">
+                                <a
+                                  href={c.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary underline-offset-2 hover:underline"
+                                >
+                                  {c.title ?? c.url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </MessageContent>
                   </Message>
                 ),
