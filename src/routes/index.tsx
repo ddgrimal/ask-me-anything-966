@@ -18,6 +18,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import ragLogo from "@/assets/rag-logo.png";
+import { BookOpen } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -209,30 +210,53 @@ function ChatPage() {
                   </Message>
                 ) : (
                   <Message key={m.id} from="assistant">
-                    <MessageContent>
-                      <MessageResponse>{m.text}</MessageResponse>
+                    <div className="w-full max-w-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                      <div className="px-5 py-4 text-[15px] leading-relaxed text-card-foreground prose-sm">
+                        <MessageResponse>{m.text}</MessageResponse>
+                      </div>
+
                       {m.citations && m.citations.length > 0 && (
-                        <div className="mt-3 border-t border-border/40 pt-2">
-                          <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            Fuentes
-                          </p>
-                          <ul className="space-y-1">
-                            {m.citations.map((c, i) => (
-                              <li key={i} className="text-xs">
+                        <div className="border-t border-border bg-muted/40 px-5 py-4">
+                          <div className="mb-3 flex items-center gap-2">
+                            <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              Fuentes consultadas
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {m.citations.map((c, i) => {
+                              let host = c.url;
+                              try {
+                                host = new URL(c.url).hostname.replace(/^www\./, "");
+                              } catch {
+                                /* keep raw */
+                              }
+                              return (
                                 <a
+                                  key={i}
                                   href={c.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-primary underline-offset-2 hover:underline"
+                                  className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/50"
                                 >
-                                  {c.title ?? c.url}
+                                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                                    {i + 1}
+                                  </div>
+                                  <div className="flex min-w-0 flex-col">
+                                    <span className="truncate text-sm font-medium text-card-foreground transition-colors group-hover:text-primary">
+                                      {c.title ?? host}
+                                    </span>
+                                    <span className="truncate text-[11px] text-muted-foreground">
+                                      {host}
+                                    </span>
+                                  </div>
                                 </a>
-                              </li>
-                            ))}
-                          </ul>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
-                    </MessageContent>
+                    </div>
                   </Message>
                 ),
               )
