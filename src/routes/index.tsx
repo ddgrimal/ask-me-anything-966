@@ -150,7 +150,7 @@ function ChatPage() {
                   </Message>
                 ) : (
                   <Message key={m.id} from="assistant">
-                    <MessageContent variant="flat">
+                    <MessageContent>
                       <MessageResponse>{m.text}</MessageResponse>
                     </MessageContent>
                   </Message>
@@ -159,7 +159,7 @@ function ChatPage() {
             )}
             {pending && (
               <Message from="assistant">
-                <MessageContent variant="flat">
+                <MessageContent>
                   <Shimmer>Pensando…</Shimmer>
                 </MessageContent>
               </Message>
