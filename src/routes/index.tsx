@@ -33,10 +33,13 @@ const API_URL =
   (import.meta.env.VITE_RAG_API_URL as string | undefined) ??
   "http://localhost:8000/api/chat";
 
+type Citation = { title?: string; url: string };
+
 type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   text: string;
+  citations?: Citation[];
 };
 
 function ChatPage() {
